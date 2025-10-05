@@ -25,7 +25,7 @@ class _AvaliacoesScreenState extends State<AvaliacoesScreen> {
 
   Future<void> fetchPasseios() async {
     final response = await http.get(
-      Uri.parse("http://localhost:8080/api/passeios"),
+      Uri.parse("http://10.0.2.2:8080/api/passeios"),
     );
     if (response.statusCode == 200) {
       setState(() {

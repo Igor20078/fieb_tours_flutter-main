@@ -22,7 +22,7 @@ class SeusPasseiosScreen extends StatefulWidget {
 
 class _SeusPasseiosScreenState extends State<SeusPasseiosScreen> {
   late Future<List<PasseioComStatus>> _meusPasseios;
-  final String baseUrl = 'http://localhost:8080/api';
+  final String baseUrl = 'http://10.0.2.2:8080/api';
 
   @override
   void initState() {
