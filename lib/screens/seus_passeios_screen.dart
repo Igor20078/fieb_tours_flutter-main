@@ -1,8 +1,7 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/passeio.dart';
 import '../models/aluno.dart';
-import 'package:http/http.dart' as http;
+import '../api/api_service.dart';
 
 class PasseioComStatus {
   final Passeio passeio;
@@ -22,7 +21,6 @@ class SeusPasseiosScreen extends StatefulWidget {
 
 class _SeusPasseiosScreenState extends State<SeusPasseiosScreen> {
   late Future<List<PasseioComStatus>> _meusPasseios;
-  final String baseUrl = 'http://10.0.2.2:8080/api';
 
   @override
   void initState() {
@@ -31,61 +29,34 @@ class _SeusPasseiosScreenState extends State<SeusPasseiosScreen> {
   }
 
   Future<List<PasseioComStatus>> fetchPasseiosReservados() async {
-    // Busca as reservas
-    final reservasUrl = Uri.parse('$baseUrl/reservas');
-    final reservasResponse = await http.get(reservasUrl);
-
-    if (reservasResponse.statusCode != 200) {
-      throw Exception('Erro ao carregar reservas: ${reservasResponse.statusCode}');
-    }
-
-    final List<dynamic> reservasData = json.decode(reservasResponse.body);
-    final alunoReservas = reservasData.where((reserva) => reserva['nome'] == widget.aluno.nome).toList();
-
-    if (alunoReservas.isEmpty) return [];
-
-    // Busca todos os passeios
-    final passeiosUrl = Uri.parse('$baseUrl/passeios');
-    final passeiosResponse = await http.get(passeiosUrl);
-
-    if (passeiosResponse.statusCode != 200) {
-      throw Exception('Erro ao carregar passeios: ${passeiosResponse.statusCode}');
-    }
-
-    final List<dynamic> passeiosData = json.decode(passeiosResponse.body);
-
-    // Combina reservas com dados dos passeios
-    List<PasseioComStatus> passeiosReservados = [];
-    
-    for (var reserva in alunoReservas) {
-      final passeioEncontrado = passeiosData.firstWhere(
-        (passeio) => passeio['nome'] == reserva['passeio'],
-        orElse: () => null,
-      );
-
-      if (passeioEncontrado != null) {
-        final passeio = Passeio(
-          id: passeioEncontrado['id'],
-          nome: passeioEncontrado['nome'],
-          descricao: passeioEncontrado['descricao'] ?? '',
-          dataPasseio: passeioEncontrado['dataPasseio'] ?? '',
-          preco: (passeioEncontrado['preco'] ?? 0).toDouble(),
-          horaSaida: passeioEncontrado['horaSaida'] ?? '',
-          horaChegada: passeioEncontrado['horaChegada'] ?? '',
-          dataInicioRecebimento: passeioEncontrado['dataInicioRecebimento'] ?? '',
-          dataFinalRecebimento: passeioEncontrado['dataFinalRecebimento'] ?? '',
-          dataCadastro: passeioEncontrado['dataCadastro'] ?? '',
-          statusPasseio: passeioEncontrado['statusPasseio'] ?? '',
-        );
-        
-        passeiosReservados.add(PasseioComStatus(
-          passeio: passeio,
-          statusReserva: reserva['status'] ?? 'nao-pago',
-        ));
+    try {
+      final reservas = await ApiService.getReservasByUsuario(widget.aluno.rm);
+      
+      if (reservas.isEmpty) return [];
+      
+      final passeios = await ApiService.getPasseios();
+      
+      List<PasseioComStatus> passeiosReservados = [];
+      
+      for (var reserva in reservas) {
+        try {
+          final passeioEncontrado = passeios.firstWhere(
+            (passeio) => passeio.nome == reserva['passeio'],
+          );
+          
+          passeiosReservados.add(PasseioComStatus(
+            passeio: passeioEncontrado,
+            statusReserva: reserva['status'] ?? 'nao-pago',
+          ));
+        } catch (e) {
+          // Passeio não encontrado, ignora esta reserva
+        }
       }
+      
+      return passeiosReservados;
+    } catch (e) {
+      throw Exception('Erro ao carregar passeios reservados: $e');
     }
-
-    return passeiosReservados;
   }
 
   String formatarData(String? dataString) {

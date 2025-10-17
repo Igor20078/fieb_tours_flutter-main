@@ -5,8 +5,8 @@ import '../models/passeio.dart';
 import '../models/avaliacao.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8080/api';
-  // static const String baseUrl = 'http://localhost:8080/api';
+  //static const String baseUrl = 'http://10.0.2.2:8080/api';
+   static const String baseUrl = 'http://localhost:8080/api';
 
   // ========================
   // LOGIN
@@ -53,27 +53,36 @@ class ApiService {
   }
 
   // ========================
-  // PASSEIOS RESERVADOS
+  // RESERVAS
   // ========================
-  static Future<List<Passeio>> getPasseiosReservados(String alunoRm) async {
+  static Future<List<dynamic>> getReservas() async {
     try {
       final response = await http.get(
-        Uri.parse(
-          '$baseUrl/reservas/aluno/$alunoRm',
-        ), // backend deve aceitar RM
+        Uri.parse('$baseUrl/reservas'),
         headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body);
-        // Cada reserva tem um campo 'passeio' com os dados do passeio
-        return jsonList.map((reserva) {
-          final passeioJson =
-              reserva['passeio']; // depende de como o backend retorna
-          return Passeio.fromJson(passeioJson);
-        }).toList();
+        return jsonDecode(response.body);
       } else {
-        throw Exception('Erro ao buscar passeios reservados: ${response.body}');
+        throw Exception('Erro ao buscar reservas: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Erro ao conectar com o servidor: $e');
+    }
+  }
+
+  static Future<List<dynamic>> getReservasByUsuario(String rm) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/reservas/usuario/$rm'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Erro ao buscar reservas do usuário: ${response.body}');
       }
     } catch (e) {
       throw Exception('Erro ao conectar com o servidor: $e');

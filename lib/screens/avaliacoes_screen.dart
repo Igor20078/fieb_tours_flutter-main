@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/aluno.dart';
 import 'avaliar_passeio_screen.dart';
 import 'ver_avaliacoes_screen.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import '../api/api_service.dart';
 
 class AvaliacoesScreen extends StatefulWidget {
   final Aluno aluno;
@@ -15,7 +14,7 @@ class AvaliacoesScreen extends StatefulWidget {
 }
 
 class _AvaliacoesScreenState extends State<AvaliacoesScreen> {
-  List passeios = [];
+  List<dynamic> passeios = [];
 
   @override
   void initState() {
@@ -24,13 +23,17 @@ class _AvaliacoesScreenState extends State<AvaliacoesScreen> {
   }
 
   Future<void> fetchPasseios() async {
-    final response = await http.get(
-      Uri.parse("http://10.0.2.2:8080/api/passeios"),
-    );
-    if (response.statusCode == 200) {
+    try {
+      final passeiosList = await ApiService.getPasseios();
       setState(() {
-        passeios = json.decode(response.body);
+        passeios = passeiosList.map((p) => {
+          "id": p.id,
+          "titulo": p.nome,
+          "descricao": p.descricao,
+        }).toList();
       });
+    } catch (e) {
+      // Handle error if needed
     }
   }
 
